@@ -2,7 +2,9 @@
 # encoding: utf-8
 
 require "rubygems"
+require 'bundler/setup'
 require "bunny"
+
 conn = Bunny.new
 conn.start
 
@@ -14,7 +16,10 @@ t = Thread.current
 q.subscribe do |delivery_info, metadata, payload|
 
 	puts "Received #{payload}"
-	t.wakeup
+
+	if "exit".eql? payload and t.status.eql? 'sleep' 
+		t.wakeup
+	end
 end
 
 puts "await for messages sleeping"
