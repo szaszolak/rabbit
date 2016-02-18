@@ -5,15 +5,17 @@ require "rubygems"
 require 'bundler/setup'
 require "bunny"
 
+
 conn = Bunny.new
 conn.start
 
 ch = conn.create_channel
-q  = ch.queue("bunny.examples.hello_world", :auto_delete => true)
-x  = ch.default_exchange
-wake = false
+queue  = ch.queue("hungry rabbit eater", :auto_delete => true)
+ex  = ch.topic("rabbit_meals", :auto_delete => true)
+
 t = Thread.current
-q.subscribe do |delivery_info, metadata, payload|
+
+queue.bind(ex, :routing_key => "meal.#").subscribe do |delivery_info, metadata, payload|
 
 	puts "Received #{payload}"
 
@@ -22,7 +24,7 @@ q.subscribe do |delivery_info, metadata, payload|
 	end
 end
 
-puts "await for messages sleeping"
+puts "await for messages"
 sleep
 
 

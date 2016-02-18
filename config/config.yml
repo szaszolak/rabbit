@@ -1,0 +1,9 @@
+rabbitHost: 127.0.0.1
+rabbitPort: 5672
+rabbitSsl: false
+rabbitVhost: /
+rabbitUser: guest
+rabbitPass: guest
+rabbitHeartbeat: :server
+rabbitFrame_max: 131072
+rabbitAuth_mechanism: PLAIN

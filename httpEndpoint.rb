@@ -4,20 +4,45 @@ require "rubygems"
 require 'bundler/setup'
 require "bunny"
 require 'sinatra'
+require 'sinatra/config_file'
 require 'byebug'
 
+config_file 'config/config.yml'
+ @@client = nil
+ @@rabbit_meals_exchange = nil
+def conn_params
+	return {
+	  :host      => settings.rabbitHost,
+	  :port      => settings.rabbitPort,
+	  :ssl       => settings.rabbitSsl,
+	  :vhost     => settings.rabbitVhost,
+	  :user      => settings.rabbitUser,
+	  :pass      => settings.rabbitPass,
+	  :heartbeat => settings.rabbitHeartbeat, 
+	  :frame_max => settings.rabbitFrame_max,
+	  :auth_mechanism => settings.rabbitAuth_mechanism
+	}
+end
 
+def client
+  unless @@client
+    conn = Bunny.new(conn_params)
+    conn.start
+    @@client = conn.create_channel
+  end
+  @@client
+end
+
+def rabbit_meals_exchange
+  @@rabbit_meals_exchange ||= client.topic("rabbit_meals", :auto_delete => true)
+end
 
 post '/rabbit' do
-  conn = Bunny.new
-	conn.start
-
-	ch = conn.create_channel
-	q  = ch.queue("bunny.examples.hello_world", :auto_delete => true)
-	x  = ch.default_exchange
-
-	req_payload = request.body.read
-	x.publish(req_payload, :routing_key => q.name)
-
-conn.close
+	begin
+		req_payload = request.body.read
+		rabbit_meals_exchange.publish(req_payload, :routing_key => "meal")
+		response.status = 200
+	rescue Bunny::Exception
+		response.status = 500
+	end
 end
