@@ -5,9 +5,13 @@ require "rubygems"
 require 'bundler/setup'
 require "bunny"
 
-
-conn = Bunny.new
-conn.start
+begin
+	conn = Bunny.new
+	conn.start
+rescue Bunny::TCPConnectionFailed
+	puts "can not connect to RabbitMQ server, script will stop executing"
+	exit
+end
 
 ch = conn.create_channel
 queue  = ch.queue("hungry rabbit eater", :auto_delete => true)

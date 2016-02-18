@@ -8,8 +8,32 @@ require 'sinatra/config_file'
 require 'byebug'
 
 config_file 'config/config.yml'
- @@client = nil
- @@rabbit_meals_exchange = nil
+before { 	env['rack.logger'] = Logger.new("#{settings.root}/log/#{settings.environment}.log",'weekly')}
+
+
+class BunnyCache
+  def self.init(params)
+  	@@conn_params = params
+   	@@client = nil
+	@@rabbit_meals_exchange = nil
+  end
+
+	def self.client
+	  unless @@client
+	    conn = Bunny.new(@@conn_params)
+	    conn.start
+	    @@client=conn.create_channel
+	  end
+	  @@client
+	end
+
+ 	def self.rabbit_meals_exchange	
+		@@rabbit_meals_exchange ||= client.topic("rabbit_meals", :auto_delete => true)
+	end
+end
+
+
+
 def conn_params
 	return {
 	  :host      => settings.rabbitHost,
@@ -24,25 +48,21 @@ def conn_params
 	}
 end
 
-def client
-  unless @@client
-    conn = Bunny.new(conn_params)
-    conn.start
-    @@client = conn.create_channel
-  end
-  @@client
+
+configure do
+  
+	BunnyCache::init(conn_params)
 end
 
-def rabbit_meals_exchange
-  @@rabbit_meals_exchange ||= client.topic("rabbit_meals", :auto_delete => true)
-end
+
 
 post '/rabbit' do
 	begin
 		req_payload = request.body.read
-		rabbit_meals_exchange.publish(req_payload, :routing_key => "meal")
+		BunnyCache.rabbit_meals_exchange.publish(req_payload, :routing_key => "meal")
 		response.status = 200
 	rescue Bunny::Exception
+		logger.info "Bunny exception occured"
 		response.status = 500
 	end
 end

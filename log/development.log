@@ -1,0 +1,4 @@
+# Logfile created on 2016-02-18 14:05:23 +0100 by logger.rb/41954
+I, [2016-02-18T14:05:53.809557 #5128]  INFO -- : Bunny exception occured
+I, [2016-02-18T14:15:06.613557 #5128]  INFO -- : Bunny exception occured
+I, [2016-02-18T14:17:25.036044 #8448]  INFO -- : Bunny exception occured
